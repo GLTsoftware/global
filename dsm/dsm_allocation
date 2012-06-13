@@ -1,0 +1,310 @@
+###########################################################################
+# Define memory allocation and machine classes for distributed shared
+# memory
+###########################################################################
+# $Id: dsm_allocation,v 2.16 2008/07/31 15:35:11 rwilson Exp $
+###########################################################################
+#
+# To make changes, edit this file, then say "make allocation".
+# The dsm servers then must all be restarted.
+#
+###########################################################################
+#
+# This file has two sections, CLASS definitions and SHARE definitions.
+# The CLASS directive defines a set of computers which will participate
+# in data sharing.  The SHARE directive takes two CLASS names as
+# arguments, and defines shared spaces between them.  Following a SHARE
+# directive is the list of allocations to be shared.
+#
+# This is best illustrated by an example:
+#
+#   class  CL1  host1, host2
+#   class  CL2  host3, host4
+#
+#   share CL1 CL2
+#      DSM_VAR1_D
+#      DSM_VAR2_D
+#
+# Here two classes are defined: CL1, which contains two hostnames
+# host1 and host2, and CL2, containing host3 and host4.  Then shared
+# spaces are defined between these two classes, containing two variables
+# DSM_VAR1_D and DSM_VAR2_D.   The net result of these definitions is
+# four independent shared spaces, each containing a variable named
+# DSM_VAR1_D and one named DSM_VAR2_D.  The four spaces are
+#
+#      host1 - host3
+#      host1 - host4
+#      host2 - host3
+#      host2 - host4
+#
+# It is important to note that these four spaces are independent;
+# e.g. changing the value of the host1-host3 copy of DSM_VAR1_D changes
+# it only in that copy (on both host1 and host3).  The variables
+# DSM_VAR1_D in the host1-host4 space and in the host2-host3 space are
+# unaffected. 
+#
+###########################################################################
+# Allocations follow a naming convention which includes
+# several "fields":
+#
+# DSM_class_name1_..._type   or   DSM_class_name1_..._Vm_..._type
+#
+# class is the dsm machine class as defined above
+# name1 is a descriptive name (may contain additional underscores)
+# type is a code describing the data type:
+#    B  = integer, 8 bit                (1 byte)
+#    S  = integer, 16 bit               (2 bytes)
+#    L  = integer, 32 bit               (4 bytes)
+#    F  = IEEE floating point, 32 bit   (4 bytes)
+#    D  = IEEE floating point, 64 bit   (8 bytes)
+#    Cn = character array (string) of length n
+#    X  = structure (see below)
+# The code (except X) may be preceded by one or more sequences of type
+# "Vm" to specify a vector.
+#
+# Examples:
+#  DSM_CRATE_VAL1_F          : a 4-byte float shared with machines in
+#                              class CRATE 
+#
+#  DSM_HAL_FILE_NAME_C50     : a 50 character string shared with machines in
+#                              class HAL
+#
+#  DSM_DDS_DATA_V10_S        : an array of 10 16-bit integers shared with
+#                              machines in class DDS
+#
+#  DSM_MRG_FDATA_V128_V128_D : a 128x128 array of 64-bit floating point
+#                              values shared with machines in class MRG
+#
+#  DSM_STORAGE_DATA_X        : a structure (defined elsewhere)
+#                              containing multiple fields
+# Names may not be longer than DSM_NAME_LENGTH characters, 
+# as defined in dsm.h.
+#
+# Names are case-sensitive.  "DSM" at the beginning is suggested, but
+# not required.
+#
+# DSM structures are composite allocations defined independently.  A
+# structure definition begins with a "structure NAME" declaration which
+# defines the name of the structure (must end in "X").  Following that
+# are the field definitions, which may be any valid DSM allocation type
+# except structures. Finally a structure definition ends with the
+# "end_structure" tag.
+#
+# Example: 
+#   structure DSM_STORAGE_DATA_X
+#     FLAG_B
+#     TIMESTAMP_L
+#     DATA_CUBE_V12_V24_V6_F
+#     COUNT_S
+#     LABEL_C64
+#   end_structure
+#
+###########################################################################
+
+
+#########################################################
+# class definitions
+
+class ACC gltacc
+class OBS gltobscon
+
+# Class CURSESMONITOR is used for variables that are only for
+# display
+#class CURSESMONITOR gltacc,obsconc2
+
+#########################################################
+# structure definitions
+ 
+#structure FROM_DATACATCHER_X
+#  FILE_NAME_C80        # Name of data file
+#  SCAN_SOURCE_C24      # Name of source on most recent scan
+#  ANT_STATUS_V11_L     # Weight to be given to most recent scan
+#  SCAN_TIME_L          # Midpoint time of most recent scan
+#  SCAN_CORNUM_L        # Correlator based number of most recent scan
+#end_structure
+
+#########################################################
+# share definitions
+
+share ACC OBS
+
+# The following variables are for communication between gltacc and ACU
+# but some of these may be passed on to gltobscon for monitoring.
+
+    DSM_ACU_MODE_RSP 		0x00040022 # 2 5
+    DSM_AZ_POSN_RSP 		0x00040012 # 8 0.048 
+    DSM_EL_POSN_RSP 		0x00040002 # 8 0.048 
+    DSM_ACU_ERROR_D 		0x0004002F # 0-5 0.048 
+    DSM_AZ_BRAKE_B 		0x00040014 # 1 5 
+    DSM_AZ_ENC_L 		0x00040017 # 4 0.048 
+    DSM_AZ_ENC_STATUS_B 	0x00040018 # 1 1 
+    DSM_AZ_MOTOR_CURRENTS_L 	0x00040019 # 4 5 
+    DSM_AZ_MOTOR_TEMPS_L 	0x0004001A # 4 5 
+    DSM_AZ_MOTOR_TORQUE_S 	0x00040015 # 2 5 
+    DSM_AZ_STATUS_D 		0x0004001B # 8 5 
+    DSM_EL_BRAKE_B 		0x00040004 # 1 5 
+    DSM_EL_ENC_D 		0x00040007 # 8 0.048 
+    DSM_EL_ENC_STATUS_L 	0x00040008 # 3 1 
+    DSM_EL_MOTOR_CURRENTS_L 	0x00040009 # 4 5 
+    DSM_EL_MOTOR_TEMPS_L 	0x0004000A # 4 5 
+    DSM_EL_MOTOR_TORQUE_L 	0x00040005 # 4 5 
+    DSM_EL_STATUS_D 		0x0004000B # 8 5 
+    DSM_SHUTTER_B 		0x0004002E # 1 5 
+    DSM_STOW_PIN_S 		0x00040024 # 2 5 
+    DSM_SYSTEM_STATUS_L 	0x00040023 # 3 5 
+
+share ACC ACC
+
+# The same variables as above are repeated below to share within gltacc
+# - in case we need to have a monitor program running on gltacc
+
+    DSM_ACU_MODE_RSP 		0x00040022 # 2 5
+    DSM_AZ_POSN_RSP 		0x00040012 # 8 0.048 
+    DSM_EL_POSN_RSP 		0x00040002 # 8 0.048 
+    DSM_ACU_ERROR_D 		0x0004002F # 0-5 0.048 
+    DSM_AZ_BRAKE_B 		0x00040014 # 1 5 
+    DSM_AZ_ENC_L 		0x00040017 # 4 0.048 
+    DSM_AZ_ENC_STATUS_B 	0x00040018 # 1 1 
+    DSM_AZ_MOTOR_CURRENTS_L 	0x00040019 # 4 5 
+    DSM_AZ_MOTOR_TEMPS_L 	0x0004001A # 4 5 
+    DSM_AZ_MOTOR_TORQUE_S 	0x00040015 # 2 5 
+    DSM_AZ_STATUS_D 		0x0004001B # 8 5 
+    DSM_EL_BRAKE_B 		0x00040004 # 1 5 
+    DSM_EL_ENC_D 		0x00040007 # 8 0.048 
+    DSM_EL_ENC_STATUS_L 	0x00040008 # 3 1 
+    DSM_EL_MOTOR_CURRENTS_L 	0x00040009 # 4 5 
+    DSM_EL_MOTOR_TEMPS_L 	0x0004000A # 4 5 
+    DSM_EL_MOTOR_TORQUE_L 	0x00040005 # 4 5 
+    DSM_EL_STATUS_D 		0x0004000B # 8 5 
+    DSM_SHUTTER_B 		0x0004002E # 1 5 
+    DSM_STOW_PIN_S 		0x00040024 # 2 5 
+    DSM_SYSTEM_STATUS_L 	0x00040023 # 3 5 
+
+share ACC OBSCON
+
+# Most of the following variables are written by track on gltacc
+# to monitor on gltobscon. Some variables are set by control command
+# issued on gltobscon for track.
+
+DSM_COMMAND_FLAG_S # dsm-read-wait for higher-level command in track's main loop
+
+DSM_POLAR_MJD_L     # track writes these polar wobble and dut parameters after
+DSM_POLAR_DX_ARCSEC_D       # reading them from /global/polar/polar.dat file
+DSM_POLAR_DY_ARCSEC_D
+DSM_POLAR_DUT_SEC_D
+
+DSM_CMD_SOURCE_C34            # track reads these for commanded source info
+DSM_CMD_RA_HOURS_D        # - these parameters are read from the source catalog
+DSM_CMD_DEC_DEG_D             # or entered via the observe command
+DSM_CMD_PMRA_MASPYEAR_D
+DSM_CMD_PMDEC_MASPYEAR_D
+DSM_CMD_EPOCH_YEAR_D
+DSM_CMD_SVEL_KMPS_D
+
+DSM_SOLSYS_FLAG_S    # 1 if solar system object, 0 otherwise; written by track
+
+DSM_AZOFF_D                   # azoff and eloff 
+DSM_ELOFF_D                   # entered by user via azoff/eloff cmds 
+                              # or by track while scanning
+
+DSM_RAOFF_ARCSEC_D            # RA/DEC offsets from ra/decoff commands
+DSM_DECOFF_ARCSEC_D
+
+DSM_SUN_AZ_DEG_F              # Sun's AZ/EL - written by solar daemon on gltacc
+DSM_SUN_EL_DEG_F      # read by track not for sun-avoidance but for calculating
+DSM_SUN_DISTANCE_DEG_D        # sun-distance for a given source. 
+                              # (sun-avoidance done by servo).
+                             
+DSM_WEATHER_TEMP_F   # Not clear yet which program will read the weatherstation
+DSM_WEATHER_HUMIDITY_F        # and update these parameters in DSM.
+DSM_WEATHER_MBAR_F
+DSM_WEATHER_WINDSPEED_F
+DSM_WEATHER_WINDDIR_F
+
+DSM_COMMANDED_AZ_DEG_F        # commanded az and el (for terrestrial targets).
+DSM_COMMANDED_EL_DEG_F
+
+    # uncomment these when we are ready to do autocorrelation
+#DSM_SPECTROMETER_ANTENNA_S  
+# spectral-line observations in position switching mode.
+#DSM_BLANKING_SOURCE_S       
+
+DSM_CCD_FITS_FILENAME_C100   # optical pointing star info read from catalog
+DSM_SPECTRAL_TYPE_C10
+DSM_VISUAL_MAGNITUDE_F
+
+DSM_COMMANDED_AZOFF_ARCSEC_D # azoff,eloff,az,el,offset unit (for scanning)...
+DSM_COMMANDED_ELOFF_ARCSEC_D
+DSM_COMMANDED_AZ_DEG_D
+DSM_COMMANDED_EL_DEG_D
+DSM_OFFSET_UNIT_ARCSEC_S
+DSM_INTEGRATION_TIME_SEC_S
+
+DSM_SOURCE_LENGTH_S          # commanded source info
+DSM_SOURCE_C34
+DSM_CMD_SOURCE_FLAG_L
+
+DSM_HOUR_ANGLE_HR_D          # Apparent coordinates calculated by track
+DSM_RA_APP_HR_D
+DSM_DEC_APP_DEG_D
+
+DSM_UTC_HR_D                 # UTC hours
+
+DSM_SVEL_KMPS_D              # source velocity and type (from catalog)
+DSM_SVELTYPE_S
+
+# Antenna position in track (as in antennaPosition.h)
+DSM_LATITUDE_DEG_D           
+DSM_LONGITUDE_DEG_D
+
+# Atmospheric refraction correction calculated by track
+DSM_REFRACTION_ARCSEC_D      
+DSM_REFRACTION_RADIO_FLAG_B  # refraction flag: 1 for radio, 0 for optical
+
+DSM_AZDC_ARCSEC_D            # Pointing model parameters read by track from pointingModel
+DSM_AZCOLLIMATION_ARCSEC_D   # file in /instance/configFiles area
+DSM_AZELAXISTILT_ARCSEC_D    
+DSM_AZAZTILTSIN_ARCSEC_D
+DSM_AZAZTILTCOS_ARCSEC_D
+DSM_AZAZTILTSIN2_ARCSEC_D
+DSM_AZAZTILTCOS2_ARCSEC_D
+DSM_AZENCSIN_ARCSEC_D
+DSM_AZENCCOS_ARCSEC_D
+DSM_AZENCSIN2_ARCSEC_D
+DSM_AZENCCOS2_ARCSEC_D
+DSM_AZENCSIN3_ARCSEC_D
+DSM_AZENCCOS3_ARCSEC_D
+DSM_AZRMS_ARCSEC_D
+DSM_ELDC_ARCSEC_D
+DSM_ELSAG_ARCSEC_D
+DSM_ELAZTILTSIN_ARCSEC_D
+DSM_ELAZTILTCOS_ARCSEC_D
+DSM_ELAZTILTSIN2_ARCSEC_D
+DSM_ELAZTILTCOS2_ARCSEC_D
+DSM_ELRMS_ARCSEC_D
+DSM_MODELDATE_C10
+
+# Planet distance and diameter from ephemeris
+DSM_PLANET_DISTANCE_AU_D             
+DSM_PLANET_DIAMETER_ARCSEC_D
+
+# Some variables written by track for curses monitor
+DSM_LST_HOURS_F               
+DSM_UTC_HOURS_F
+DSM_TJD_D
+DSM_RA_CAT_HOURS_F
+DSM_DEC_CAT_DEG_F
+DSM_EPOCH_F
+DSM_ACTUAL_AZ_DEG_F
+DSM_ACTUAL_EL_DEG_F
+
+DSM_PMDAZ_F                  # az and el pointing corrections in arcseconds
+DSM_PMDEL_F
+
+DSM_UNIX_TIME_L
+DSM_TRACK_TIMESTAMP_L
+
+DSM_TRACK_MESSAGE_C100
+DSM_TRACK_LAST_COMMAND_C100
+DSM_CONSOLE_COMMAND_FLAG_S
+DSM_COMMANDED_TRACK_COMMAND_C30
