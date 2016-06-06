@@ -1,0 +1,129 @@
+###########################################################################
+# Define memory allocation and machine classes for distributed shared
+# memory
+###########################################################################
+# $Id: dsm_allocation.template,v 1.2 2006/11/15 18:40:36 ckatz Exp $
+###########################################################################
+#
+# To make changes, edit this file, then say "make allocation".
+# The dsm servers then must all be restarted.
+#
+###########################################################################
+#
+# This file has two sections, CLASS definitions and SHARE definitions.
+# The CLASS directive defines a set of computers which will participate
+# in data sharing.  The SHARE directive takes two CLASS names as
+# arguments, and defines shared spaces between them.  Following a SHARE
+# directive is the list of allocations to be shared.
+#
+# This is best illustrated by an example:
+#
+#   class  CL1  host1, host2
+#   class  CL2  host3, host4
+#
+#   share CL1 CL2
+#      DSM_VAR1_D
+#      DSM_VAR2_D
+#
+# Here two classes are defined: CL1, which contains two hostnames
+# host1 and host2, and CL2, containing host3 and host4.  Then shared
+# spaces are defined between these two classes, containing two variables
+# DSM_VAR1_D and DSM_VAR2_D.   The net result of these definitions is
+# four independent shared spaces, each containing a variable named
+# DSM_VAR1_D and one named DSM_VAR2_D.  The four spaces are
+#
+#      host1 - host3
+#      host1 - host4
+#      host2 - host3
+#      host2 - host4
+#
+# It is important to note that these four spaces are independent;
+# e.g. changing the value of the host1-host3 copy of DSM_VAR1_D changes
+# it only in that copy (on both host1 and host3).  The variables
+# DSM_VAR1_D in the host1-host4 space and in the host2-host3 space are
+# unaffected. 
+#
+###########################################################################
+# Allocations follow a naming convention which includes
+# several "fields":
+#
+# DSM_class_name1_..._type   or   DSM_class_name1_..._Vm_..._type
+#
+# class is the dsm machine class as defined above
+# name1 is a descriptive name (may contain additional underscores)
+# type is a code describing the data type:
+#    B  = integer, 8 bit                (1 byte)
+#    S  = integer, 16 bit               (2 bytes)
+#    L  = integer, 32 bit               (4 bytes)
+#    F  = IEEE floating point, 32 bit   (4 bytes)
+#    D  = IEEE floating point, 64 bit   (8 bytes)
+#    Cn = character array (string) of length n
+#    X  = structure (see below)
+# The code (except X) may be preceded by one or more sequences of type
+# "Vm" to specify a vector.
+#
+# Examples:
+#  DSM_CRATE_VAL1_F          : a 4-byte float shared with machines in
+#                              class CRATE 
+#
+#  DSM_HAL_FILE_NAME_C50     : a 50 character string shared with machines in
+#                              class HAL
+#
+#  DSM_DDS_DATA_V10_S        : an array of 10 16-bit integers shared with
+#                              machines in class DDS
+#
+#  DSM_MRG_FDATA_V128_V128_D : a 128x128 array of 64-bit floating point
+#                              values shared with machines in class MRG
+#
+#  DSM_STORAGE_DATA_X        : a structure (defined elsewhere)
+#                              containing multiple fields
+# Names may not be longer than DSM_NAME_LENGTH characters, 
+# as defined in dsm.h.
+#
+# Names are case-sensitive.  "DSM" at the beginning is suggested, but
+# not required.
+#
+# DSM structures are composite allocations defined independently.  A
+# structure definition begins with a "structure NAME" declaration which
+# defines the name of the structure (must end in "X").  Following that
+# are the field definitions, which may be any valid DSM allocation type
+# except structures. Finally a structure definition ends with the
+# "end_structure" tag.
+#
+# Example: 
+#   structure DSM_STORAGE_DATA_X
+#     FLAG_B
+#     TIMESTAMP_L
+#     DATA_CUBE_V12_V24_V6_F
+#     COUNT_S
+#     LABEL_C64
+#   end_structure
+#
+###########################################################################
+
+
+#########################################################
+# class definitions
+
+class HAL hal9000
+class CORCON corcon
+
+#########################################################
+# structure definitions
+
+structure EXAMPLE_X
+  FLOAT_F
+  VALUE_S
+  STRING_C32
+end_structure
+
+#########################################################
+# share definitions
+
+share HAL HAL
+  WITHIN_HAL_S
+  HAL_ONLY_D
+
+share HAL CORCON
+  EXAMPLE_X
+  ANOTHER_INTEGER_L
