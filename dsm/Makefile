@@ -19,7 +19,7 @@ LYNXOSLIBS   = $(COMMONLIB)/commonLib -lrpc -lnetinet
 ###################################################################
 # Definitions for building under Linux
 LINUXCC     = gcc
-LINUXCFLAGS = -g -Wall -D_POSIX_SOURCE -D_BSD_SOURCE -D_SVID_SOURCE
+LINUXCFLAGS = -g -Wall -D_POSIX_SOURCE -D_BSD_SOURCE -D_SVID_SOURCE -fPIC
 LINUXLIBS   = -lpthread -lrt
 
 ##############################################################
@@ -59,7 +59,7 @@ endif
 ifeq ($(HOSTTYPE),x86_64-linux)
   HOSTDESC = $(HOSTTYPE)
   CC       = $(LINUXCC)
-  CFLAGS   = $(LINUXCFLAGS) -m32
+  CFLAGS   = $(LINUXCFLAGS) -m64
   LIBS     = $(LINUXLIBS)
   OSFOUND  = 1
 endif
